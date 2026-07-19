@@ -5,19 +5,32 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: ArchiveFiles@2
-  displayName: 'Files ko zip karo'
+# ===== BUILD STAGE (Naya Add Kiya) =====
+- task: NodeTool@0
+  displayName: 'Node.js install karo'
   inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+    versionSpec: '20.x'
+
+- script: |
+    npm install
+    npm run build
+  displayName: 'Dependencies install aur app build karo'
+
+# ===== ARCHIVE STAGE =====
+- task: ArchiveFiles@2
+  displayName: 'Build output ko zip karo'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/build'   # build folder ko zip karo, poori repo nahi
     includeRootFolder: false
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
     replaceExistingArchive: true
 
+# ===== DEPLOY STAGE =====
 - task: AzureWebApp@1
   displayName: 'Azure Web App pe deploy karo'
   inputs:
     azureSubscription: 'AzureConnection'
     appType: 'webAppLinux'
-    appName: 'intisar-webapp'
+    appName: 'intisar_webapp'
     package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
