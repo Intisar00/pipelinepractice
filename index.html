@@ -1,82 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Navtech</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body class="body">
-    <div class="cards">
-      <card class="card1">
-        <div class="image">
-          <img src="Images/tech.jpg" alt="" />
-        </div>
-        <div class="detail">
-          <div>
-            <button class="btn" id="btn1">Technology</button>
-          </div>
-          <div>
-            <h1>What's new in 2025 Tech</h1>
-          </div>
-          <div>
-            <p>
-              my name is intisar ahamd
-            </p>
-          </div>
+trigger:
+- main
 
-          <div class="rounded">
-            <div>
-              <img
-                class="img"
-                src="Images/men.webp"
-                alt=""
-                width="50"
-                height="50"
-              />
-            </div>
-            <div>
-              <h3>Usman</h3>
-            </div>
-          </div>
-        </div>
-      </card>
+pool:
+  vmImage: 'ubuntu-latest'
 
-      <card class="card2">
-        <div class="image">
-          <img src="Images/digital.jpg" alt="" />
-        </div>
-        <div class="detail">
-          <div>
-            <button class="btn" id="btn2">Digital</button>
-          </div>
-          <div>
-            <h1>Digital Marketing</h1>
-          </div>
-          <div>
-            <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Eos odit
-              exercitationem at veritatis, quod itaque placeat nam magnam
-              officia recusandae!
-            </p>
-          </div>
+steps:
+# ===== BUILD STAGE (Naya Add Kiya) =====
+- task: NodeTool@0
+  displayName: 'Node.js install karo'
+  inputs:
+    versionSpec: '20.x'
 
-          <div class="rounded">
-            <div>
-              <img
-                class="img"
-                src="Images/women.webp"
-                alt=""
-                width="50"
-                height="50"
-              />
-            </div>
-            <div class="para">
-              <h3>Usman</h3>
-            </div>
-          </div>
-        </div>
-      </card>
-    </div>
-  </body>
-</html>
+- script: |
+    npm install
+    npm run build
+  displayName: 'Dependencies install aur app build karo'
+
+# ===== ARCHIVE STAGE =====
+- task: ArchiveFiles@2
+  displayName: 'Build output ko zip karo'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/build'   # build folder ko zip karo, poori repo nahi
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+# ===== DEPLOY STAGE =====
+- task: AzureWebApp@1
+  displayName: 'Azure Web App pe deploy karo'
+  inputs:
+    azureSubscription: 'AzureConnection'
+    appType: 'webAppLinux'
+    appName: 'intisar_webapp'
+    package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
