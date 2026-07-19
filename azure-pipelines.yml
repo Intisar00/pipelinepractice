@@ -4,41 +4,47 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-jobs:
-- job: BuildJob
-  displayName: 'Build aur Zip Job'
-  steps:
-  - task: ArchiveFiles@2
-    displayName: 'Files ko zip karo'
-    inputs:
-      rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-      includeRootFolder: false
-      archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-      replaceExistingArchive: true
+stages:
+- stage: BuildStage
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build aur Zip Job'
+    steps:
+    - task: ArchiveFiles@2
+      displayName: 'Files ko zip karo'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Zip ko artifact ki tarah publish karo'
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Zip ko artifact ki tarah publish karo'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
 
-- job: DeployJob
-  displayName: 'Deploy Job'
-  dependsOn: BuildJob
-  steps:
-  - task: DownloadBuildArtifacts@1
-    displayName: 'Artifact download karo'
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: 'drop'
-      downloadPath: '$(System.ArtifactsDirectory)'
+- stage: DeployStage
+  displayName: 'Deploy Stage'
+  dependsOn: BuildStage
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy Job'
+    steps:
+    - task: DownloadBuildArtifacts@1
+      displayName: 'Artifact download karo'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.ArtifactsDirectory)'
 
-  - task: AzureWebApp@1
-    displayName: 'Azure Web App pe deploy karo'
-    inputs:
-      azureSubscription: 'AzureConnection'
-      appType: 'webAppLinux'
-      appName: 'intisar-webapp'
-      package: '$(System.ArtifactsDirectory)/drop/$(Build.BuildId).zip'
+    - task: AzureWebApp@1
+      displayName: 'Azure Web App pe deploy karo'
+      inputs:
+        azureSubscription: 'AzureConnection'
+        appType: 'webAppLinux'
+        appName: 'intisar-webapp'
+        package: '$(System.ArtifactsDirectory)/drop/$(Build.BuildId).zip'
