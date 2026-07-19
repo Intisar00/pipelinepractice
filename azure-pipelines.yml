@@ -4,20 +4,27 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-steps:
-- task: ArchiveFiles@2
-  displayName: 'Files ko zip karo'
-  inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    replaceExistingArchive: true
+jobs:
+- job: BuildJob
+  displayName: 'Build aur Zip Job'
+  steps:
+  - task: ArchiveFiles@2
+    displayName: 'Files ko zip karo'
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      replaceExistingArchive: true
 
-- task: AzureWebApp@1
-  displayName: 'Azure Web App pe deploy karo'
-  inputs:
-    azureSubscription: 'AzureConnection'
-    appType: 'webAppLinux'
-    appName: 'intisar-webapp'
-    package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+- job: DeployJob
+  displayName: 'Deploy Job'
+  dependsOn: BuildJob
+  steps:
+  - task: AzureWebApp@1
+    displayName: 'Azure Web App pe deploy karo'
+    inputs:
+      azureSubscription: 'AzureConnection'
+      appType: 'webAppLinux'
+      appName: 'intisar-webapp'
+      package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
